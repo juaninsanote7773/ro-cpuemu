@@ -26,7 +26,7 @@ function BIOS.start()
 	--find boot sector
 	while true do
 		task.wait(1)
-		if RAM[512] == "0x55aa" then
+		if RAM.RAMSTOR[512] == "0x55aa" then
 			--print("found")
 			BIOS.showchar("\nBooting from Hard Disk...")
 			break
