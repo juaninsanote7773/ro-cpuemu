@@ -2,6 +2,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CPUINST = require(ReplicatedStorage.CPUINST)
 
+local RAM = require(ReplicatedStorage.RAM)
+
 local PROCESS = {}
 
 function PROCESS.start_comp(compiled)
@@ -24,21 +26,24 @@ function PROCESS.start_comp(compiled)
 		end
 		
 		if data_type == 0 then
-			CPUINST.set(CPUINST.to_hex(ReplicatedStorage["RAM-LastSpace"].Value+origin), data, data_type)
+			CPUINST.set(ReplicatedStorage["RAM-LastSpace"].Value+origin, data, data_type)
 		end
 		if data_type == 1 then
-			CPUINST.set(CPUINST.to_hex(ReplicatedStorage["RAM-LastSpace"].Value+origin), data, data_type)
+			CPUINST.set(ReplicatedStorage["RAM-LastSpace"].Value+origin, data, data_type)
 		end
 		if data_type == 2 then
-			CPUINST.set(CPUINST.to_hex(ReplicatedStorage["RAM-LastSpace"].Value+origin), data, data_type)
+			CPUINST.set(ReplicatedStorage["RAM-LastSpace"].Value+origin, data, data_type)
 		end
 		if data_type == 3 then
-			CPUINST.set(CPUINST.to_hex(ReplicatedStorage["RAM-LastSpace"].Value+origin), data, data_type)
+			CPUINST.set(ReplicatedStorage["RAM-LastSpace"].Value+origin, data, data_type)
 		end
 		if data_type == 4 then
-			CPUINST.set(CPUINST.to_hex(ReplicatedStorage["RAM-LastSpace"].Value+origin), data, data_type)
+			CPUINST.set(ReplicatedStorage["RAM-LastSpace"].Value+origin, data, data_type)
 		end
+		
 	end
+	print(RAM.RAMSTOR)
+
 end
 
 return PROCESS
