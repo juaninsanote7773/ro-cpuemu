@@ -1,2 +1,2 @@
 # ro-cpuemu
-An open source CPU Emulator written in Luau
+An open source computer emulator made from scratch in Luau (Roblox)
