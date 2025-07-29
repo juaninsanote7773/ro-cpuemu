@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local RAMSTOR = ReplicatedStorage["RAM-Storage"]
+--local RAMSTOR = ReplicatedStorage["RAM-Storage"]
+local RAM = require(ReplicatedStorage["RAM"])
 local CPUREG = ReplicatedStorage["CPU-Register"]
 local DISPLAY = require(ReplicatedStorage.DISPLAY)
 
@@ -25,7 +26,7 @@ function BIOS.start()
 	--find boot sector
 	while true do
 		task.wait(1)
-		if RAMSTOR:FindFirstChild("0x200").data.Value == "0x55aa" then
+		if RAM[512] == "0x55aa" then
 			--print("found")
 			BIOS.showchar("\nBooting from Hard Disk...")
 			break
