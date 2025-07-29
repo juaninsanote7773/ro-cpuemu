@@ -2,7 +2,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local RAMSTOR = ReplicatedStorage["RAM-Storage"]
+local RAM = require(ReplicatedStorage.RAM)
 local CPUREG = ReplicatedStorage["CPU-Register"]
 local BIOS = require(ReplicatedStorage.BIOS)
 
@@ -20,7 +20,7 @@ local EFLAGS = {
 
 --inst_set = {"load", "add", "set", "cmp", "jmpif", "jmp", "out", "in", "db"}
 CPUINST.cpu_register = {"eax", "ebx", "ecx", "edx", "ax", "ah", "al", "bx", "cx", "dx", "esp"}
-CPUINST.cpu_instructions = {"load", "add", "db", "mov", "cmp", "jmp", "je", "jne", "jl", "jg", "call", "biosclear", "push", "pop"}
+CPUINST.cpu_instructions = {"0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A", "0x0B", "0x0C", "0x0D", "0x0F", "0x10", "0x11", "0x12", "0x13"}
 
 function CPUINST.check_add(word)
 	if word == CPUINST.to_hex(word) then
@@ -41,7 +41,7 @@ function clear_EFLAGS()
 end
 
 function CPUINST.to_decimal(word)
-	return tonumber(word, 16)
+	return tonumber(word)
 end
 
 function CPUINST.to_hex(word)
@@ -55,7 +55,11 @@ end
 function CPUINST.check_datatype(word)
 	local data_type = 0
 	
-	if tonumber(word) then
+	if word == nil then
+		return "FLAG_FAIL"
+	end
+	
+	if tonumber(word) and CPUINST.check_add(word) == 0 then
 		data_type = 1
 		return word, data_type
 	end
@@ -88,12 +92,18 @@ function CPUINST.check_datatype(word)
 		return word, data_type
 	end
 
-	--labels, used for jmp
-
-	local str = string.split(word, ":")
-	if str[2] then
-		data_type = 4
-		word = str[1]
+	if table.find(CPUINST.cpu_instructions, word) then
+		data_type = 0
+		return word, data_type
+	end
+	
+	if CPUINST.check_add(word) == 1 then
+		data_type = 3
+		return word, data_type
+	end
+	
+	if tostring(word) and not tonumber(word) then
+		data_type = 2
 		return word, data_type
 	end
 	
@@ -101,8 +111,8 @@ function CPUINST.check_datatype(word)
 end
 
 function CPUINST.load(address)
-	local add = RAMSTOR:FindFirstChild(address)
-	return add.data.Value
+	local add = RAM.read(CPUINST.to_decimal(address))
+	return add
 end
 
 function CPUINST.add(val1, val2)
@@ -117,7 +127,7 @@ function CPUINST.add(val1, val2)
 	
 	if not table.find(CPUINST.cpu_register, val1) then
 		if not table.find(CPUINST.cpu_register, val2) then
-			local trueval_1 = RAMSTOR:FindFirstChild(val1).data.Value
+			local trueval_1 = RAM.RAMSTOR[CPUINST.to_decimal(val1)].data.Value
 			trueval_1 = tonumber(trueval_1)
 			if tostring(val2) or tostring(trueval_1) then
 				return
@@ -142,7 +152,7 @@ end
 function CPUINST.inc(val)
 	print("INCREMENTING "..val)
 	if CPUINST.check_add(val) == 1 then
-		local RAMADD = RAMSTOR:FindFirstChild(val)
+		local RAMADD = RAM.RAMSTOR[CPUINST.to_decimal(val)]
 		RAMADD.data.Value += 1
 		return "success"
 	end
@@ -160,7 +170,7 @@ end
 
 function CPUINST.dec(val)
 	if CPUINST.check_add(val) == 1 then
-		local RAMADD = RAMSTOR:FindFirstChild(val)
+		local RAMADD = RAM.RAMSTOR[CPUINST.to_decimal(val)]
 		RAMADD.data.Value -= 1
 		return "success"
 	end
@@ -176,33 +186,26 @@ end
 
 function CPUINST.db(val)
 	print("is this function ever called?")
-	CPUINST.set(RAMSTOR.Parent["RAM-LastSpace"].Value, val)
+	CPUINST.set(ReplicatedStorage["RAM-LastSpace"].Value, val)
 end
 
 function CPUINST.set(address, val, data_type)	
 	if tonumber(address) then
-		address = CPUINST.to_hex(address)
+		address = CPUINST.to_decimal(address)
 	end
-	if RAMSTOR:FindFirstChild(address) == nil and CPUREG:FindFirstChild(address) == nil then
+	if RAM.RAMSTOR[CPUINST.to_decimal(address)] == nil and CPUREG:FindFirstChild(address) == nil then
 		return "FLAG_FAIL"
 	end
 	if not table.find(CPUINST.cpu_register, address) then
-		local add = RAMSTOR:FindFirstChild(address)
+		local add = RAM.RAMSTOR[CPUINST.to_decimal(address)]
 		if not add then
 			return "FLAG_FAIL"
 		end
 		
-		add.data.Value = val
+		RAM.write(CPUINST.to_decimal(address), val)
 --		print(add.data.Value.." THIS IS THE VALUE ON "..address)
 		--print(val)
-		if not data_type then
-			local word, data_type = CPUINST.check_datatype(tostring(val))
-			add.data_type.Value = data_type
-		else
-			add.data_type.Value = data_type
-		end
-
-		RAMSTOR.Parent["RAM-LastSpace"].Value += 1
+		ReplicatedStorage["RAM-LastSpace"].Value += 1
 		
 		return "success"
 	else
@@ -226,7 +229,7 @@ function CPUINST.cat(val1, val2)
 	local address2 = CPUINST.check_add(val2)
 
 	if address1 == 1 then
-		val1 = RAMSTOR:FindFirstChild(val1).data.Value
+		val1 = RAM.RAMSTOR[CPUINST.to_decimal(val1)]
 	end
 	if address1 == 2 then
 		val1 = CPUREG:FindFirstChild(val1).Value
@@ -237,7 +240,7 @@ function CPUINST.cat(val1, val2)
 	
 	
 	if address2 == 1 then
-		val2 = RAMSTOR:FindFirstChild(val2).data.Value
+		val2 = RAM.RAMSTOR[CPUINST.to_decimal(val2)]
 	end
 	if address2 == 2 then
 		val2 = CPUREG:FindFirstChild(val2).Value
@@ -338,13 +341,13 @@ function CPUINST.jmp(memadd)
 	if not CPUINST.to_decimal(memadd) then
 		return
 	end
-	return CPUINST.to_hex(CPUINST.to_decimal(memadd))
+	return CPUINST.to_decimal(memadd)
 end
 
 function CPUINST.out(char, data_type)
 	if data_type == 3 then
-		if RAMSTOR:FindFirstChild(char) then
-			char = RAMSTOR:FindFirstChild(char).data.Value
+		if RAM.RAMSTOR[CPUINST.to_decimal(char)] then
+			char = RAM.RAMSTOR[CPUINST.to_decimal(char)]
 		end
 	end
 	if table.find(CPUINST.cpu_register, char) then
@@ -355,8 +358,7 @@ function CPUINST.out(char, data_type)
 end
 
 function CPUINST.call(func)
-	local RAM_LOC = RAMSTOR:FindFirstChild(CPUINST.to_hex(CPUREG.esp.Value))
-	local DATA_VALUE = RAM_LOC.data.Value
+	local DATA_VALUE = RAM.read(CPUREG.esp.Value)
 	print(DATA_VALUE)
 	if func == "printf" then
 		return CPUINST.out(DATA_VALUE)
@@ -367,8 +369,7 @@ function CPUINST.push(value, data_type)
 	local adress = CPUINST.check_add(value)
 	if adress ~= 0 then
 		if not table.find(CPUINST.cpu_register, value) then
-			
-			value = RAMSTOR:FindFirstChild(value).data.Value
+			value = RAM.RAMSTOR[CPUINST.to_decimal(value)]
 		else
 			value = CPUREG:FindFirstChild(value).Value
 		end
@@ -377,18 +378,16 @@ function CPUINST.push(value, data_type)
 	
 	CPUINST.db(value)
 	CPUREG.esp.Value = ReplicatedStorage["RAM-LastSpace"].Value-1
-	table.insert(stack, {value, CPUINST.to_hex(CPUREG.esp.Value)})
+	table.insert(stack, {value, CPUINST.to_decimal(CPUREG.esp.Value)})
 end
 
 
 function CPUINST.pop(value)
 	CPUREG.esp.Value += 1
-	for i,v in pairs(stack) do
+	for i,v in stack do
 		--print(v)
 		if v[1] == value then
-			local RAM_LOC = RAMSTOR:FindFirstChild(v[2])
-			RAM_LOC.data.Value = ""
-			RAM_LOC.data_type.Value = 1
+			RAM.write(CPUINST.to_decimal(v[2]), "")
 			table.remove(stack, i)
 		end
 	end
