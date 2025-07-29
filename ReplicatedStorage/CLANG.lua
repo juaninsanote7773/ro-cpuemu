@@ -1,4 +1,3 @@
---someone fix this library please -juaninsanote7773
 --[[
 	C language!
 ]]
@@ -6,7 +5,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CPUINST = require(ReplicatedStorage.CPUINST)
 local ASM = require(ReplicatedStorage.ASM)
-local RAMSTOR = ReplicatedStorage["RAM-Storage"]
+--local RAMSTOR = ReplicatedStorage["RAM-Storage"]
 
 local CLANG = {}
 
@@ -63,7 +62,7 @@ function CLANG.compile(c_script)
 		for itoken, word in split do
 			len += 1
 
-			memadd = RAMSTOR.Parent["RAM-LastSpace"].Value+len-1
+			memadd = ReplicatedStorage["RAM-LastSpace"].Value+len-1
 			
 			--declaring variables
 			--print(memadd)
