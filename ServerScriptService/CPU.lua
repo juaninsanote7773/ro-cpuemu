@@ -28,7 +28,6 @@ local asm_script = {
 local asm_script2 = 
 	[[
 
-biosclear
 mov @0x55 3
 mov eax 3
 
@@ -43,8 +42,6 @@ call printf
 pop 'World!'
 	
 prettycoollabel:
-push 'a'
-pop 'a'
 cmp @0x55 eax
 je label
 
@@ -220,7 +217,7 @@ local BIOSSTARTED = false
 
 function iterate_ram()
 	local last_out = 0
-	local RAMSTOR = ReplicatedStorage["RAM-Storage"]
+--	local RAMSTOR = ReplicatedStorage["RAM-Storage"]
 	
 	local last_func = ""
 	
@@ -235,13 +232,18 @@ function iterate_ram()
 	local last_definition = 0
 	local current_label = 0
 	local label_processing = 0
-	while i < #RAMSTOR:GetChildren() do
+	while i < #RAM.RAMSTOR do
 		task.wait()
 		i += 1
 		--print(CPUINST.to_hex(i))
-		local data = RAMSTOR:FindFirstChild(CPUINST.to_hex(i))
-		local value = data.data.Value
-		local data_type = data.data_type.Value	
+		local data = RAM.read(i)
+		local value = data
+		local word, data_type = CPUINST.check_datatype(data)
+		if value == nil then
+			continue
+		end
+		
+		print(data_type.." DATA TYPE FOR "..value)
 				
 		--handle BIOS default functions
 		
@@ -289,7 +291,7 @@ function iterate_ram()
 						--	print("JUMPING TO: "..output)
 						--	print(output.." THIS IS THE OUTPUUUUT LOOOK")
 							i = tonumber(output) --num initialization
-							local data = RAMSTOR:FindFirstChild(CPUINST.to_hex(i)).data.Value
+							local data = RAM.RAMSTOR[i]
 							
 							--print(data.." THIS IS THE JUMP DATA")
 							if i <= 0 then
@@ -375,8 +377,8 @@ task.wait()
 ]]
 
 --[[
-local compiled3 = FILE.open("C:/System32/kernel.bin")  ########
-compiled3 = compiled3.file_data                        THOSE BINARIES ARE IN THE RBXL FILE
+local compiled3 = FILE.open("C:/System32/kernel.bin")
+compiled3 = compiled3.file_data
 PROCESS.start_comp(compiled3)
 ]]
 
