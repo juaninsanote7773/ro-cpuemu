@@ -2,8 +2,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --local RAMSTOR = ReplicatedStorage["RAM-Storage"]
 local RAM = require(ReplicatedStorage["RAM"])
-local CPUREG = ReplicatedStorage["CPU-Register"]
 local DISPLAY = require(ReplicatedStorage.DISPLAY)
+local CPUREG = require(ReplicatedStorage.CPUREG)
 
 local BIOS = {}
 
@@ -36,9 +36,9 @@ end
 
 ReplicatedStorage.Input.OnServerEvent:Connect(function(p, keycode)
 	--print("FOUNDDD")
-	if tonumber(keycode.Value) then
-		CPUREG.ah.Value = tostring(keycode.Value)
-		CPUREG.al.Value = string.char(CPUREG.ah.Value)
+	if keycode.Value ~= 0 then
+		CPUREG.write("ah", keycode.Value)
+		CPUREG.write("al", string.char(keycode.Value))
 		found_input = true
 	end
 end)
