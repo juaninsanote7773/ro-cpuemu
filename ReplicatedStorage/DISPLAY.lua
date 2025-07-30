@@ -2,11 +2,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local DISPLAY = {}
 
+local VRAM = {}
+local VRAM_SIZE = 1024 --1kb
+
 local width = 64
 local aspect_ratio = 4/3
 local height = width/aspect_ratio
 
 local display_part = workspace.display
+
+function DISPLAY.gen_vram()
+	for i = 1, VRAM_SIZE do
+		table.insert(VRAM, {0})
+	end
+end
 
 function DISPLAY.bios_clear()
 	display_part.SurfaceGui.BIOS.Text = ""
