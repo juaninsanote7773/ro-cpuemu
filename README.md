@@ -1,6 +1,12 @@
 # RO-CPUEMU
 An open-source custom-made CPU Emulator made in Roblox Luau.
 
+## Featues:
+* Clock based processing
+* 32KB RAM
+* Single threaded Processor
+* Can process 20 instructions (x86-like instructions)
+
 # Contributions
 If you have any ideas of how to make this project push further, consider making these changes to your code and then issue a pull request so it can be merged later on!
 
