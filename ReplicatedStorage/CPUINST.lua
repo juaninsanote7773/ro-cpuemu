@@ -3,12 +3,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local RAM = require(ReplicatedStorage.RAM)
-local CPUREG = ReplicatedStorage["CPU-Register"]
 local BIOS = require(ReplicatedStorage.BIOS)
 
 local CPUINST = {}
 
 local stack = {}
+
+local CPUREG = require(ReplicatedStorage.CPUREG)
 
 local EFLAGS = {
 	["ZF"] = 0,
@@ -119,7 +120,7 @@ function CPUINST.add(val1, val2)
 	local trueval_2 = val2
 	
 	if table.find(CPUINST.cpu_register, val2) then
-		trueval_2 = ReplicatedStorage["CPU-Register"]:FindFirstChild(val2).Value
+		trueval_2 = CPUREG.read(val2)
 		trueval_2 = tonumber(trueval_2)
 	end
 	
@@ -137,7 +138,7 @@ function CPUINST.add(val1, val2)
 		end
 	else
 		print("a")
-		local trueval_1 = ReplicatedStorage["CPU-Register"]:FindFirstChild(val1).Value
+		local trueval_1 = CPUREG.read(val1)
 		trueval_1 = tonumber(trueval_1)
 		print(val2.. " "..trueval_1)
 		if not tonumber(val2) then
@@ -157,8 +158,8 @@ function CPUINST.inc(val)
 		return "success"
 	end
 	if CPUINST.check_add(val) == 2 then
-		local REGADD = CPUREG:FindFirstChild(val)
-		REGADD.Value += 1
+		local REG_VALUE = CPUREG.read(val)
+		local REGADD = CPUREG.write(val, REG_VALUE+1)
 		print(REGADD.Value.." THIS IS THE REGADD")
 		return "success"
 	end
@@ -175,8 +176,8 @@ function CPUINST.dec(val)
 		return "success"
 	end
 	if CPUINST.check_add(val) == 2 then
-		local REGADD = CPUREG:FindFirstChild(val)
-		REGADD.Value -= 1
+		local REG_VALUE = CPUREG.read(val)
+		local REGADD = CPUREG.write(val, REG_VALUE-1)
 		return "success"
 	end
 	if CPUINST.check_add(val) == 0 then
@@ -185,7 +186,6 @@ function CPUINST.dec(val)
 end
 
 function CPUINST.db(val)
-	print("is this function ever called?")
 	CPUINST.set(ReplicatedStorage["RAM-LastSpace"].Value, val)
 end
 
@@ -193,7 +193,7 @@ function CPUINST.set(address, val, data_type)
 	if tonumber(address) then
 		address = CPUINST.to_decimal(address)
 	end
-	if RAM.RAMSTOR[CPUINST.to_decimal(address)] == nil and CPUREG:FindFirstChild(address) == nil then
+	if RAM.RAMSTOR[CPUINST.to_decimal(address)] == nil and not table.find(CPUINST.cpu_register, tostring(address)) then
 		return "FLAG_FAIL"
 	end
 	if not table.find(CPUINST.cpu_register, address) then
@@ -210,8 +210,7 @@ function CPUINST.set(address, val, data_type)
 		return "success"
 	else
 		--print("a")
-		local add = ReplicatedStorage["CPU-Register"]:FindFirstChild(address)
-		add.Value = val
+		CPUREG.write(address, val)
 		
 		return "success"
 	end
@@ -232,7 +231,7 @@ function CPUINST.cat(val1, val2)
 		val1 = RAM.RAMSTOR[CPUINST.to_decimal(val1)]
 	end
 	if address1 == 2 then
-		val1 = CPUREG:FindFirstChild(val1).Value
+		val1 = CPUREG.read(val1)
 	end
 	if address1 == 0 then
 		return "FLAG_FAIL"
@@ -243,7 +242,7 @@ function CPUINST.cat(val1, val2)
 		val2 = RAM.RAMSTOR[CPUINST.to_decimal(val2)]
 	end
 	if address2 == 2 then
-		val2 = CPUREG:FindFirstChild(val2).Value
+		val2 = CPUREG.read(val2)
 	end
 	
 	CPUINST.set(address_val1, val1..val2)
@@ -258,7 +257,7 @@ function CPUINST.cmp(val1, val2)
 		print("ITS 1111 FOR THE FIRST")
 	end
 	if CPUINST.check_add(val1) == 2 then
-		val1 = CPUREG:FindFirstChild(val1).Value
+		val1 = CPUREG.read(val1)
 	end
 	
 	if CPUINST.check_add(val2) == 1 then
@@ -266,7 +265,7 @@ function CPUINST.cmp(val1, val2)
 		print("ITS 1111 FOR THE SECOND")
 	end
 	if CPUINST.check_add(val2) == 2 then
-		val2 = CPUREG:FindFirstChild(val2).Value
+		val2 = CPUREG.read(val2)
 	end
 	
 	print(val1.." VALUES "..val2)
@@ -351,14 +350,16 @@ function CPUINST.out(char, data_type)
 		end
 	end
 	if table.find(CPUINST.cpu_register, char) then
-		
-		char = CPUREG:FindFirstChild(char).Value
+		char = CPUREG.read(char)
 	end
 	BIOS.showchar(char)
 end
 
 function CPUINST.call(func)
-	local DATA_VALUE = RAM.read(CPUREG.esp.Value)
+	local DATA_VALUE = RAM.read(CPUREG.read("esp"))
+	if DATA_VALUE == nil then
+		return "FLAG_FAIL"
+	end
 	print(DATA_VALUE)
 	if func == "printf" then
 		return CPUINST.out(DATA_VALUE)
@@ -371,19 +372,20 @@ function CPUINST.push(value, data_type)
 		if not table.find(CPUINST.cpu_register, value) then
 			value = RAM.RAMSTOR[CPUINST.to_decimal(value)]
 		else
-			value = CPUREG:FindFirstChild(value).Value
+			value = CPUREG.read(value)
 		end
 	end
-	print("a pretty neat value: "..value)
+--	print("a pretty neat value: "..value)
 	
 	CPUINST.db(value)
-	CPUREG.esp.Value = ReplicatedStorage["RAM-LastSpace"].Value-1
-	table.insert(stack, {value, CPUINST.to_decimal(CPUREG.esp.Value)})
+	CPUREG.write("esp", ReplicatedStorage["RAM-LastSpace"].Value-1)
+	table.insert(stack, {value, CPUINST.to_decimal(CPUREG.read("esp"))})
 end
 
 
 function CPUINST.pop(value)
-	CPUREG.esp.Value += 1
+	local REG_VAL = CPUREG.read("esp")
+	CPUREG.write("esp", REG_VAL+1)
 	for i,v in stack do
 		--print(v)
 		if v[1] == value then
