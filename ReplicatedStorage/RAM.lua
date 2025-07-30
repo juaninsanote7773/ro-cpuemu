@@ -4,7 +4,7 @@ local RAM = {}
 
 RAM.RAMSTOR = {}
 
-local size_bytes = 1024 --1kb
+local RAM_SIZE = 16384 --16kb
 
 --local inst_set = {"load", "add", "set", "cmp", "JA", "JL", "JE", "jmp", "out", "in"}
 
@@ -17,7 +17,7 @@ function RAM.read(i)
 end
 
 function RAM.generate()
-	for i = 1, size_bytes do
+	for i = 1, RAM_SIZE do
 		--[[local clone = ReplicatedStorage["RAM-Adress"]:Clone()
 		clone.Parent = ReplicatedStorage["RAM-Storage"]
 		clone.Name = string.format("0x%02X", i)
